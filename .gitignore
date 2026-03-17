@@ -6,6 +6,7 @@ __pycache__/
 .venv/
 venv/
 env/
+.uv-python/
 
 # 本地数据与缓存
 .localappdata/
