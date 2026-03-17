@@ -10,18 +10,15 @@ from wechat_to_markdown import (
     is_wechat_article_url,
 )
 
-EXAMPLE_URL = "https://mp.weixin.qq.com/s/qFHnWXHe-048JUo0Yvfsdg"
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="下载公众号文章并转换为 Markdown，默认使用示例链接。"
+        description="下载公众号文章并转换为 Markdown。"
     )
     parser.add_argument(
         "url",
         nargs="?",
-        default=EXAMPLE_URL,
-        help=f"公众号文章链接，默认值: {EXAMPLE_URL}",
+        default=None,
+        help="公众号文章链接，例如 https://mp.weixin.qq.com/s/...",
     )
     parser.add_argument(
         "--output-dir",
@@ -34,6 +31,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     ensure_stdout_utf8()
     args = parse_args()
+    if not args.url:
+        print("请提供公众号文章链接，例如 https://mp.weixin.qq.com/s/...")
+        return 1
     if not is_wechat_article_url(args.url):
         print("请输入有效的微信文章链接，例如 https://mp.weixin.qq.com/s/...")
         return 1
