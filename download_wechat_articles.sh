@@ -6,6 +6,7 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 URL_FILE=""
 OUTPUT_DIR="$SCRIPT_DIR/temp"
 PYTHON_EXE=""
+DOWNLOAD_SCRIPT=""   # 1=download_wechat_article.py, 2=download_wechat_article_common.py
 TOTAL=0
 SUCCESS=0
 FAILED=0
@@ -13,11 +14,16 @@ FAILED=0
 usage() {
     resolve_default_url_file >/dev/null 2>&1 || true
     echo "Usage:"
-    echo "  $(basename "$0") [url_file] [output_dir]"
+    echo "  $(basename "$0") [options] [url_file] [output_dir]"
+    echo
+    echo "Options:"
+    echo "  -m, --mode 1|2    选择下载方案：1=默认(wechat_to_markdown), 2=通用(wechat_to_markdown_common)"
+    echo "  -h, --help        显示此帮助"
     echo
     echo "Default:"
     echo "  url_file   = ${URL_FILE:-<not found>}"
     echo "  output_dir = $OUTPUT_DIR"
+    echo "  mode       = 1 (默认方案)"
 }
 
 resolve_default_url_file() {
@@ -60,7 +66,7 @@ download_one() {
 
     TOTAL=$((TOTAL + 1))
     echo "[$TOTAL] Fetching: $url"
-    "$PYTHON_EXE" "$SCRIPT_DIR/download_wechat_article.py" "$url" --output-dir "$OUTPUT_DIR"
+    "$PYTHON_EXE" "$DOWNLOAD_SCRIPT" "$url" --output-dir "$OUTPUT_DIR"
     status=$?
     if [ "$status" -ne 0 ]; then
         FAILED=$((FAILED + 1))
@@ -75,10 +81,47 @@ download_one() {
     return 0
 }
 
-case "${1:-}" in
-    -h|--help)
-        usage
-        exit 0
+# 解析选项和参数
+MODE=1
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -m|--mode)
+            shift
+            if [ -z "${1:-}" ]; then
+                echo "错误: -m/--mode 需要指定 1 或 2" >&2
+                exit 1
+            fi
+            MODE=$1
+            shift
+            ;;
+        -*)
+            echo "未知选项: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# 根据 mode 选择下载脚本
+case "$MODE" in
+    1)
+        DOWNLOAD_SCRIPT="$SCRIPT_DIR/download_wechat_article.py"
+        ;;
+    2)
+        DOWNLOAD_SCRIPT="$SCRIPT_DIR/download_wechat_article_common.py"
+        ;;
+    *)
+        echo "错误: --mode 只能是 1 或 2" >&2
+        echo "  1 = download_wechat_article.py (默认方案)" >&2
+        echo "  2 = download_wechat_article_common.py (通用方案)" >&2
+        exit 1
         ;;
 esac
 
@@ -97,8 +140,8 @@ if [ ! -f "$URL_FILE" ]; then
     exit 1
 fi
 
-if [ ! -f "$SCRIPT_DIR/download_wechat_article.py" ]; then
-    echo "Script not found: $SCRIPT_DIR/download_wechat_article.py" >&2
+if [ ! -f "$DOWNLOAD_SCRIPT" ]; then
+    echo "Script not found: $DOWNLOAD_SCRIPT" >&2
     exit 1
 fi
 
@@ -108,6 +151,7 @@ mkdir -p "$OUTPUT_DIR"
 echo "URL file: $URL_FILE"
 echo "Output dir: $OUTPUT_DIR"
 echo "Python: $PYTHON_EXE"
+echo "Mode: $MODE ($(basename "$DOWNLOAD_SCRIPT"))"
 echo
 
 while IFS= read -r url || [ -n "$url" ]; do
