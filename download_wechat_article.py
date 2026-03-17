@@ -10,7 +10,9 @@ from wechat_to_markdown import (
     is_wechat_article_url,
 )
 
+
 def parse_args() -> argparse.Namespace:
+    # 只暴露最核心的两个命令行参数：文章链接和输出目录。
     parser = argparse.ArgumentParser(
         description="下载公众号文章并转换为 Markdown。"
     )
@@ -29,6 +31,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    # 命令行工具入口：校验参数，调用下载逻辑，并返回合适的退出码。
     ensure_stdout_utf8()
     args = parse_args()
     if not args.url:
